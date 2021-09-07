@@ -1,0 +1,64 @@
+#Importing Datasets
+dataset=pd.read_csv('Data.csv')
+x = dataset.iloc[:,1:36].values # lower bound independent variable to upper bound in a matrix (in this case only 1 column 'NC')
+y = dataset.iloc[:,36:].values # dependent variable vector
+print(x.shape)
+print(y.shape)
+
+#One Hot Encoding fuel rail column
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+labelencoder_y= LabelEncoder()
+y[:,0]=labelencoder_y.fit_transform(y[:,0])
+onehotencoder= OneHotEncoder(categorical_features=[0])
+y = onehotencoder.fit_transform(y).toarray()
+print(y[:,0:])
+
+print(x.shape)
+print (y.shape)
+
+
+#splitting data into Training and Test Data
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.1,random_state=0)
+
+#Feature Scaling
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+#x_train = sc.fit_transform(x_train)
+#x_test=sc.transform(x_test)
+y_train = sc.fit_transform(y_train)
+y_test=sc.transform(y_test)
+
+# PART2 - Making ANN, deep neural network
+
+#Importing the Keras libraries and packages
+import keras
+from keras.models import Sequential
+from keras.layers import Dense
+
+
+#Initialising ANN
+classifier = Sequential()
+#Adding the input layer and first hidden layer
+classifier.add(Dense(activation= 'relu', input_dim =35, units=2, kernel_initializer="uniform"))#rectifier activation function, include all input with one hot encoding
+#Adding second hidden layer
+classifier.add(Dense(activation= 'relu', units=2, kernel_initializer="uniform")) #rectifier activation function
+#Adding the Output Layer
+classifier.add(Dense(activation='softmax', units=19, kernel_initializer="uniform")) 
+#Compiling ANN - stochastic gradient descent
+classifier.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])#stochastic gradient descent
+
+#Fit ANN to training set
+
+#PART 3 - Making predictions and evaluating the model
+#Fitting classifier to the training set
+classifier.fit(x_train, y_train, batch_size=10, epochs=100)#original batch is 10 and epoch is 100
+
+#Predicting the Test set rules
+y_pred = classifier.predict(x_test)
+y_pred = (y_pred > 0.5) #greater than 0.50 on scale 0 to 1
+print(y_pred)
+
+#Making confusion matrix that checks accuracy of the model
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, y_pred)
